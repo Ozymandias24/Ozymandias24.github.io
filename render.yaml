@@ -10,7 +10,6 @@ services:
     name: Ozymandias
     runtime: python
     plan: free # Free tier: 512 MB RAM, spins down after 15 min inactivity
-    buildCommand: "pip install uv && uv sync"
     startCommand: "uv run uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
