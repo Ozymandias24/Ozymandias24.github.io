@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Potential Difference Measurement Real-time Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .current-value {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .value-box {
+            text-align: center;
+        }
+
+        .value-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .value-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .value-timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+
+        .download-btn:hover {
+            background-color: #45a049;
+        }
+
+        .download-btn:disabled {
+            background-color: #cccccc !important;
+            cursor: not-allowed !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Micro-Potential Difference Measurement Real-time Monitoring</h1>
+
+            <div
+                style="margin: 20px auto; padding: 20px; background: #f8f9fa; border-radius: 10px; display: inline-block;">
+                <div>
+                    <button id="startBtn" class="download-btn"
+                        style="background-color: #2196F3; border: none; cursor: pointer;">
+                        Start Measurement
+                    </button>
+                    <button id="completeBtn" class="download-btn"
+                        style="background-color: #FF9800; border: none; cursor: pointer; margin-left: 10px;" disabled>
+                        Complete Measurement
+                    </button>
+                    <a href="/api/download" class="download-btn" style="margin-left: 10px;">
+                        Download Excel (CSV) Data
+                    </a>
+                    <button id="clearBtn" class="download-btn"
+                        style="background-color: #f44336; margin-left: 10px; border: none; cursor: pointer;">
+                        Reset Data
+                    </button>
+                </div>
+                <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+                    <span style="align-self: center; font-weight: bold; color: #555;">Channels:</span>
+                    <button class="channel-btn" data-channels="1" style="background-color: #2196F3; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">1</button>
+                    <button class="channel-btn" data-channels="2" style="background-color: #e0e0e0; color: #333; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">2</button>
+                    <button class="channel-btn" data-channels="3" style="background-color: #e0e0e0; color: #333; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">3</button>
+                    <button class="channel-btn" data-channels="4" style="background-color: #e0e0e0; color: #333; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">4</button>
+                    <span style="align-self: center; font-weight: bold; color: #555; margin-left: 15px;">Light:</span>
+                    <button id="lightToggleBtn" style="background-color: #757575; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer;">OFF</button>
+                </div>
+            </div>
+
+            <div class="status" style="margin-bottom: 15px;">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Waiting</span>
+            </div>
+        </div>
+
+        <div class="current-value" id="currentValueContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <div class="value-box" id="box-ch0">
+                <div class="value-label">CH0 Microvoltage</div>
+                <div class="value-number" id="currentValue-ch0">-</div>
+                <div class="value-timestamp" id="currentTimestamp-ch0">Waiting for data...</div>
+            </div>
+            <div class="value-box" id="box-ch1" style="display: none;">
+                <div class="value-label">CH1 Microvoltage</div>
+                <div class="value-number" id="currentValue-ch1">-</div>
+                <div class="value-timestamp" id="currentTimestamp-ch1">Waiting for data...</div>
+            </div>
+            <div class="value-box" id="box-ch2" style="display: none;">
+                <div class="value-label">CH2 Microvoltage</div>
+                <div class="value-number" id="currentValue-ch2">-</div>
+                <div class="value-timestamp" id="currentTimestamp-ch2">Waiting for data...</div>
+            </div>
+            <div class="value-box" id="box-ch3" style="display: none;">
+                <div class="value-label">CH3 Microvoltage</div>
+                <div class="value-number" id="currentValue-ch3">-</div>
+                <div class="value-timestamp" id="currentTimestamp-ch3">Waiting for data...</div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Sample Count</div>
+                <div class="stat-value" id="sampleCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Saved Sessions</div>
+                <div class="stat-value" id="completedSessions">0</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2 style="margin-bottom: 20px; color: #333;">Real-time Microvoltage Value Variation (Recent Measurement)
+            </h2>
+            <canvas id="lightChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js Configuration
+        const ctx = document.getElementById('lightChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CH0 (Real-time)',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3
+                }, {
+                    label: 'CH1 (Real-time)',
+                    data: [],
+                    borderColor: '#ed64a6',
+                    backgroundColor: 'rgba(237, 100, 166, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, hidden: true
+                }, {
+                    label: 'CH2 (Real-time)',
+                    data: [],
+                    borderColor: '#48bb78',
+                    backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, hidden: true
+                }, {
+                    label: 'CH3 (Real-time)',
+                    data: [],
+                    borderColor: '#ed8936',
+                    backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                    borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, hidden: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Microvoltage Value'
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                return Number(value).toFixed(3);
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+
+        let lastProcessedTimestamp = null;
+        let isMeasuring = false;
+        let activeChannels = 1;
+        let lightOn = false;
+
+        async function updateData() {
+            try {
+                const latestResponse = await fetch('/api/latest');
+                const latestData = await latestResponse.json();
+
+                // Update Status
+                isMeasuring = latestData.is_measuring;
+                document.getElementById('startBtn').disabled = isMeasuring;
+                document.getElementById('completeBtn').disabled = !isMeasuring;
+
+                if (isMeasuring) {
+                    document.getElementById('statusText').textContent = 'Measuring...';
+                    document.getElementById('statusDot').style.background = '#4caf50';
+                } else {
+                    document.getElementById('statusText').textContent = 'Waiting';
+                    document.getElementById('statusDot').style.background = '#ccc';
+                }
+
+                document.getElementById('sampleCount').textContent = latestData.sample_count || 0;
+                document.getElementById('completedSessions').textContent = latestData.completed_sessions || 0;
+
+                // Sync active channels
+                if (latestData.active_channels && latestData.active_channels !== activeChannels) {
+                    activeChannels = latestData.active_channels;
+                    document.querySelectorAll('.channel-btn').forEach(b => {
+                        b.style.backgroundColor = parseInt(b.dataset.channels) === activeChannels ? '#2196F3' : '#e0e0e0';
+                        b.style.color = parseInt(b.dataset.channels) === activeChannels ? 'white' : '#333';
+                    });
+                    for (let i = 0; i < 4; i++) {
+                        const box = document.getElementById(`box-ch${i}`);
+                        if (box) {
+                            box.style.display = i < activeChannels ? 'block' : 'none';
+                        }
+                        chart.setDatasetVisibility(i, i < activeChannels);
+                    }
+                    chart.update('none');
+                }
+                
+                // Sync light state
+                if (latestData.light_on !== undefined && latestData.light_on !== lightOn) {
+                    lightOn = latestData.light_on;
+                    const lightBtn = document.getElementById('lightToggleBtn');
+                    if (lightOn) {
+                        lightBtn.style.backgroundColor = '#FFC107'; // Yellow
+                        lightBtn.style.color = '#333';
+                        lightBtn.textContent = 'ON';
+                    } else {
+                        lightBtn.style.backgroundColor = '#757575'; // Gray
+                        lightBtn.style.color = 'white';
+                        lightBtn.textContent = 'OFF';
+                    }
+                }
+
+                // Update Data
+                if (latestData.channels && Object.keys(latestData.channels).length > 0 && latestData.timestamp !== lastProcessedTimestamp) {
+                    const now = new Date();
+                    const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+                    chart.data.labels.push(timeLabel);
+                    
+                    for (let i = 0; i < 4; i++) {
+                        let chKey = `ch${i}`;
+                        if (latestData.channels[chKey] !== undefined) {
+                            chart.data.datasets[i].data.push(latestData.channels[chKey]);
+                            document.getElementById(`currentValue-${chKey}`).textContent = Number(latestData.channels[chKey]).toFixed(3);
+                            document.getElementById(`currentTimestamp-${chKey}`).textContent = `Last Update: ${latestData.timestamp}`;
+                        } else {
+                            if (chart.data.labels.length > 0) {
+                                chart.data.datasets[i].data.push(null);
+                            }
+                        }
+                    }
+
+                    // Keep maximum of 500 data points for performance
+                    if (chart.data.labels.length > 500) {
+                        chart.data.labels.shift();
+                        chart.data.datasets.forEach(dataset => dataset.data.shift());
+                    }
+
+                    chart.update('active');
+
+                    lastProcessedTimestamp = latestData.timestamp;
+                }
+
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            }
+        }
+
+        // Load Initial Data
+        updateData();
+        setInterval(updateData, 100);
+
+        // Event Listener: Start Measurement
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // Reset Chart
+                    chart.data.labels = [];
+                    chart.data.datasets.forEach(dataset => dataset.data = []);
+                    chart.update('none');
+                    lastProcessedTimestamp = null;
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Start failed:', error);
+            }
+        });
+
+        // Event Listener: Complete Measurement
+        document.getElementById('completeBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/complete', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    alert('Measurement completed and saved.');
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Completion failed:', error);
+            }
+        });
+
+        // Event Listener: Reset Data
+        document.getElementById('clearBtn').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to reset all data? (including saved sessions)')) {
+                try {
+                    const response = await fetch('/api/clear', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        chart.data.labels = [];
+                        chart.data.datasets.forEach(dataset => dataset.data = []);
+                        chart.update('none');
+
+                        for (let i = 0; i < 4; i++) {
+                            const valEl = document.getElementById(`currentValue-ch${i}`);
+                            const tsEl = document.getElementById(`currentTimestamp-ch${i}`);
+                            if (valEl) valEl.textContent = '-';
+                            if (tsEl) tsEl.textContent = 'Waiting for data...';
+                        }
+                        
+                        lastProcessedTimestamp = null;
+
+                        alert('Data reset successfully.');
+                    }
+                } catch (error) {
+                    console.error('Reset failed:', error);
+                    alert('Failed to reset data.');
+                }
+            }
+        });
+
+        // Event Listener: Channel Selection
+        document.querySelectorAll('.channel-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const count = parseInt(e.target.dataset.channels);
+                try {
+                    const response = await fetch('/api/set_channels', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ channels: count })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        // State will be synced in updateData() on next tick
+                    }
+                } catch(error) {
+                    console.error('Failed to set channels', error);
+                }
+            });
+        });
+
+        // Event Listener: Light Toggle
+        document.getElementById('lightToggleBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/toggle_light', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // toggle
+                });
+                if (response.ok) {
+                    // State will be synced in updateData() on next tick
+                }
+            } catch(error) {
+                console.error('Failed to toggle light', error);
+            }
+        });
+    </script>
+</body>
+
+</html>
