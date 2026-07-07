@@ -2,16 +2,17 @@ databases:
   - name: Ozymandias-db
     databaseName: ozymandias  
     user: ozymandias24        
-    plan: free # Free tier: 1 GB storage, expires after 90 days
-    ipAllowList: [] # Allow connections from any IP
+    plan: free 
+    ipAllowList: [] 
 
 services:
   - type: web
     name: Ozymandias
     runtime: python
-    plan: free # Free tier: 512 MB RAM, spins down after 15 min inactivity
+    plan: free 
     buildCommand: pip install -r requirements.txt
-    startCommand: "uv run uvicorn main:app --host 0.0.0.0 --port $PORT"
+    #  Flask 웹앱(app.py)을 실행하도록 명령어를 수정했습니다!
+    startCommand: "python app.py"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
