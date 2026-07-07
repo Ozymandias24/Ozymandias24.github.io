@@ -1,13 +1,13 @@
 databases:
-  - name: fastapi-db
-    databaseName: fastapi_tutorial
-    user: fastapi_user
+  - name: Ozymandias-db
+    databaseName: Ozymandias
+    user: Ozymandias24
     plan: free # Free tier: 1 GB storage, expires after 90 days
     ipAllowList: [] # Allow connections from any IP
 
 services:
   - type: web
-    name: fastapi-tutorial
+    name: Ozymandias
     runtime: python
     plan: free # Free tier: 512 MB RAM, spins down after 15 min inactivity
     buildCommand: "pip install uv && uv sync"
@@ -17,5 +17,5 @@ services:
         value: 3.10.0
       - key: DATABASE_URL
         fromDatabase:
-          name: fastapi-db
+          name: Ozymandias-db
           property: connectionString
