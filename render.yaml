@@ -1,7 +1,7 @@
 databases:
   - name: Ozymandias-db
-    databaseName: Ozymandias
-    user: Ozymandias24
+    databaseName: ozymandias  
+    user: ozymandias24        
     plan: free # Free tier: 1 GB storage, expires after 90 days
     ipAllowList: [] # Allow connections from any IP
 
